@@ -1,0 +1,307 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(dplyr)
+library(lubridate)
+library(tidyverse)
+library(hms)
+library(chron)
+library(ggplot2) 
+library(GGally)
+library(reshape2)
+library(grid)
+library(gridExtra)
+library(kableExtra)
+```
+
+
+```{r}
+d2015 <- read.csv("data/2015.csv")
+d2016 <- read.csv("data/2016.csv")
+d2017 <- read.csv("data/2017.csv")
+d2018 <- read.csv("data/2018.csv")
+d2019 <- read.csv("data/2019.csv")
+```
+
+```{r}
+dataframes <- list(
+  d2015,
+  d2016,
+  d2017,
+  d2018,
+  d2019
+  )
+
+csv_dataframes <- c(
+  "2015.csv",
+  "2016.csv",
+  "2017.csv",
+  "2018.csv",
+  "2019.csv"
+  )
+
+number_unique = number_rows = number_variables = number_empty_rows <-c()
+for (i in 1:length(dataframes)){
+   number_unique <- append(number_unique, n_distinct(select(dataframes[[i]],1:1)))
+   number_variables <- append(number_variables, ncol(dataframes[[i]]))
+   number_rows <- append(number_rows, nrow(dataframes[[i]]))
+   number_empty_rows <- append(number_empty_rows, sum(is.na(dataframes[[i]])))
+}
+
+save_summarize <- data.frame(
+  number_unique,
+  number_variables,
+  number_rows,
+  number_empty_rows
+)
+
+f_col_name <- function(data){
+  paste(colnames(data),collapse = " | ")
+}
+
+#ต้องทำให้เป็น length เดียวกันก่อนเพื่อที่จะเรียงกันไป
+summarize_list <- data.frame(
+  name_of_files = csv_dataframes,
+  variable_names = unlist(lapply(dataframes, f_col_name)),
+  number_unique,
+  number_variables,
+  number_rows,
+  number_empty_rows
+)
+
+#kabble Extra
+kbl(summarize_list,"html") %>%
+  kable_paper("striped", full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>% 
+  column_spec(2, width = "10cm")
+
+```
+
+```{r}
+d2015_selected <- d2015 %>% 
+  add_column(year = 2015) %>% 
+  add_column(Social.support = NA) %>% 
+  select( year = year,
+          Country = Country,
+          Region = Region,
+             Rank = Happiness.Rank,
+             Score = Happiness.Score,
+             GDP.per.capita =  Economy..GDP.per.Capita.,
+             Healthy.life.expectation =  Health..Life.Expectancy. ,
+             Freedom = Freedom,
+             Trust.in.government =  Trust..Government.Corruption.,
+             Generosity = Generosity,
+              Social.support = Social.support,
+              Family = Family)
+
+d2016_selected <- d2016 %>% 
+  add_column(year = 2016) %>% 
+  add_column(Social.support = NA) %>% 
+  select(
+         year = year,
+         Country = Country,
+         Region = Region,
+         Rank = Happiness.Rank,
+         Score = Happiness.Score,
+         GDP.per.capita =  Economy..GDP.per.Capita.,
+         Healthy.life.expectation =  Health..Life.Expectancy. ,
+         Freedom = Freedom,
+         Trust.in.government =  Trust..Government.Corruption.,
+         Generosity = Generosity,
+         Social.support =Social.support,
+         Family = Family)
+
+d2017_selected <- d2017 %>% 
+  add_column(year = 2017) %>% 
+  add_column(Region = NA) %>% 
+  add_column(Social.support = NA) %>% 
+  select(year = year,
+         Country = Country,
+         Region = Region,
+         Rank = Happiness.Rank,
+         Score = Happiness.Score,
+         GDP.per.capita =  Economy..GDP.per.Capita.,
+         Healthy.life.expectation =  Health..Life.Expectancy. ,
+         Freedom = Freedom,
+         Trust.in.government =  Trust..Government.Corruption.,
+         Generosity = Generosity,
+         Social.support = Social.support,
+         Family = Family)
+
+d2018_selected <- d2018 %>% 
+  add_column(year = 2018) %>% 
+  add_column(Region = NA) %>% 
+  add_column(Family = NA) %>% 
+  select(year = year,
+         Region = Region,
+         Country =  Country.or.region ,
+         Rank = Overall.rank ,
+         Score =  Score,
+         GDP.per.capita =   GDP.per.capita,
+         Healthy.life.expectation =  Healthy.life.expectancy ,
+         Freedom =  Freedom.to.make.life.choices ,
+         Trust.in.government = Perceptions.of.corruption  ,
+         Generosity = Generosity,
+         Social.support = Social.support,
+         Family = Family)
+
+d2019_selected <- d2019 %>% 
+  add_column(year = 2019) %>% 
+  add_column(Region = NA) %>%
+  add_column(Family = NA) %>% 
+  select(year = year,
+         Region = Region,
+         Country =  Country.or.region ,
+         Rank = Overall.rank ,
+         Score =  Score,
+         GDP.per.capita =   GDP.per.capita,
+         Healthy.life.expectation =   Healthy.life.expectancy ,
+         Freedom =  Freedom.to.make.life.choices ,
+         Trust.in.government = Perceptions.of.corruption  ,
+         Generosity = Generosity,
+         Social.support = Social.support,
+         Family = Family)
+
+combined_data <- rbind(d2015_selected, 
+                       d2016_selected, 
+                       d2017_selected,
+                       d2018_selected, 
+                       d2019_selected)
+```
+
+```{r}
+combined_data_list <- list(d2015_selected, 
+                       d2016_selected, 
+                       d2017_selected,
+                       d2018_selected, 
+                       d2019_selected,
+                       combined_data)
+combined_csv_dataframes <- c(
+  "2015.csv",
+  "2016.csv",
+  "2017.csv",
+  "2018.csv",
+  "2019.csv",
+  "combined_version")
+
+number_unique = number_rows = number_variables = number_empty_rows <-c()
+for (i in 1:length(combined_data_list)){
+   number_unique <- append(number_unique, n_distinct(select(combined_data_list[[i]],1:1)))
+   number_variables <- append(number_variables, ncol(combined_data_list[[i]]))
+   number_rows <- append(number_rows, nrow(combined_data_list[[i]]))
+   number_empty_rows <- append(number_empty_rows, sum(is.na(combined_data_list[[i]])))
+}
+
+combined_summarize_list <- data.frame(
+  name_of_files = combined_csv_dataframes,
+  variable_names = unlist(lapply(combined_data_list, f_col_name)),
+  number_unique,
+  number_variables,
+  number_rows,
+  number_empty_rows
+)
+
+kbl(combined_summarize_list,"html") %>%
+  kable_paper("striped", full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>% 
+  column_spec(2, width = "10cm")
+```
+
+```{r}
+write.csv(combined_data,"combined_data.csv")
+```
+
+#The below is the actual one, before that is experimenting
+
+```{r}
+d2018 <- read.csv("data/2018.csv")
+d2019 <- read.csv("data/2019.csv")
+```
+
+```{r}
+dataframes <- list(
+  d2018,
+  d2019
+  )
+
+csv_dataframes <- c(
+  "2018.csv",
+  "2019.csv"
+  )
+
+number_unique = number_rows = number_variables = number_empty_rows <-c()
+for (i in 1:length(dataframes)){
+   number_unique <- append(number_unique, n_distinct(select(dataframes[[i]],1:1)))
+   number_variables <- append(number_variables, ncol(dataframes[[i]]))
+   number_rows <- append(number_rows, nrow(dataframes[[i]]))
+   number_empty_rows <- append(number_empty_rows, sum(is.na(dataframes[[i]])))
+}
+
+
+f_col_name <- function(data){
+  paste(colnames(data),collapse = " | ")
+}
+
+#ต้องทำให้เป็น length เดียวกันก่อนเพื่อที่จะเรียงกันไป
+summarize_list <- data.frame(
+  name_of_files = csv_dataframes,
+  variable_names = unlist(lapply(dataframes, f_col_name)),
+  number_unique,
+  number_variables,
+  number_rows,
+  number_empty_rows
+)
+
+kbl(summarize_list,"html") %>%
+  kable_paper("striped", full_width = F) 
+```
+```{r}
+data_set <- rbind(d2018, d2019)
+glimpse(data_set)
+```
+
+```{r}
+data_set$Perceptions.of.corruption <- as.double(data_set$Perceptions.of.corruption)
+glimpse(data_set$Perceptions.of.corruption)
+```
+
+```{r}
+glimpse(data_correl)
+```
+
+
+```{r}
+data_correl <- data_set %>% 
+  select(1:9) %>% 
+  drop_na
+```
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+num.cols <- sapply(data_correl, is.double)
+cor.data <- cor(data_correl[,num.cols])
+
+
+
+library(corrgram)
+library(corrplot)
+
+print(corrplot(cor.data, method = 'color'))
+corrgram(data_correl)
+```
+
+The most significant factors for high happiness scores are:
+
+* GDP per capita
+* Healthy life expectancy
+* Social support
+
+GDP has the highest correlation with happiness score, and healthy life expectancy is the most significant factor for GDP per capita. However, we cannot confirm whether it is causation to one another.
+
+
+
+
+
